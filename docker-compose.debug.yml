@@ -1,0 +1,68 @@
+version: '3.4'
+
+networks:
+  dev:
+    driver: bridge
+
+services:
+  absendulugateway:
+    container_name: absendulugateway
+    image: ar1raja/absendulu_gateway:dev
+    ports:
+      - 5001:5000
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    networks:
+      - dev
+    restart: unless-stopped
+
+  absendulube:
+    container_name: absendulube
+    image: ar1raja/absendulu_be:dev
+    ports:
+      - 5159:5158
+    environment:
+      - DATABASE_URL=jdbc:postgresql://postgresdb:5432/postgres
+      - PORT=5432
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - dev
+    depends_on:
+      - postgresdb
+    restart: unless-stopped
+
+  postgresdb:
+    image: postgres
+    container_name: postgresdb
+    environment:
+      POSTGRES_DB: dev
+      POSTGRES_USER: superman_absendulu
+      POSTGRES_PASSWORD: whecanfly
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dev
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./rabbitmq-data:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - dev
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+x-logging:
+  options:
+    max-size: "12m"
+    max-file: "5"
